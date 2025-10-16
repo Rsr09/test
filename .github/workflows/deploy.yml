@@ -10,16 +10,17 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    # 1️⃣ Checkout the code
+    # 1️⃣ Checkout the repo
     - name: Checkout repository
       uses: actions/checkout@v3
 
-    # 2️⃣ Configure AWS credentials via OIDC (your IAM role)
-    - name: Configure AWS credentials via OIDC
+    # 2️⃣ Configure AWS credentials using secrets
+    - name: Configure AWS credentials
       uses: aws-actions/configure-aws-credentials@v4
       with:
-        role-to-assume: arn:aws:iam::737063749553:role/devops
-        aws-region: ap-south-1
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ secrets.AWS_REGION }}
 
     # 3️⃣ Login to ECR
     - name: Login to Amazon ECR
@@ -36,10 +37,9 @@ jobs:
         docker tag aws-assignment:latest 737063749553.dkr.ecr.ap-south-1.amazonaws.com/aws-assignment:latest
         docker push 737063749553.dkr.ecr.ap-south-1.amazonaws.com/aws-assignment:latest
 
-    # 6️⃣ Update kubeconfig to access EKS
+    # 6️⃣ Update kubeconfig for EKS
     - name: Update kubeconfig
-      run: |
-        aws eks update-kubeconfig --region ap-south-1 --name aws-assignment
+      run: aws eks update-kubeconfig --region ap-south-1 --name aws-assignment
 
     # 7️⃣ Deploy to EKS
     - name: Deploy to EKS
@@ -47,6 +47,6 @@ jobs:
         kubectl apply -f deployment.yaml
         kubectl apply -f service.yaml
 
-    # 8️⃣ Check service status
-    - name: Get Service Info
+    # 8️⃣ Get service info (optional)
+    - name: Check service status
       run: kubectl get svc
