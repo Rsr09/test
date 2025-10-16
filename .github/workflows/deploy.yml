@@ -10,7 +10,7 @@ env:
   ECR_REPOSITORY: aws-assignment
   ECR_REGISTRY: 737063749553.dkr.ecr.ap-south-1.amazonaws.com
   IMAGE_TAG: latest
-  CLUSTER_NAME: <your-eks-cluster-name>  
+  CLUSTER_NAME: aws-assignment  
 
 jobs:
   build-deploy:
