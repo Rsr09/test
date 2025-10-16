@@ -1,0 +1,60 @@
+name: Build and Deploy to EKS
+
+on:
+  push:
+    branches:
+      - main  # triggers when code is pushed to main branch
+
+env:
+  AWS_REGION: ap-south-1
+  ECR_REPOSITORY: aws-assignment
+  ECR_REGISTRY: 737063749553.dkr.ecr.ap-south-1.amazonaws.com
+  IMAGE_TAG: latest
+  CLUSTER_NAME: <your-eks-cluster-name>  
+
+jobs:
+  build-deploy:
+    name: Build, Push, and Deploy
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step 1 - Checkout code
+      - name: Checkout source code
+        uses: actions/checkout@v4
+
+      # Step 2 - Configure AWS credentials
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+
+      # Step 3 - Login to Amazon ECR
+      - name: Login to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
+
+      # Step 4 - Build, tag, and push image to ECR
+      - name: Build, tag, and push image
+        run: |
+          docker build -t $ECR_REPOSITORY:$IMAGE_TAG .
+          docker tag $ECR_REPOSITORY:$IMAGE_TAG $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+          docker push $ECR_REGISTRY/$ECR_REPOSITORY:$IMAGE_TAG
+
+      # Step 5 - Update kubeconfig for your EKS cluster
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --name $CLUSTER_NAME --region $AWS_REGION
+
+      # Step 6 - Deploy to EKS
+      - name: Deploy to Amazon EKS
+        run: |
+          kubectl apply -f deployment.yaml
+          kubectl apply -f service.yaml
+
+      # Step 7 - Verify deployment
+      - name: Verify pods and services
+        run: |
+          kubectl get pods
+          kubectl get svc
